@@ -53,14 +53,9 @@ public class GameService {
     private DynamoDbClient getClient() {
         Region region = Region.US_EAST_1;
 
-        AwsSessionCredentials sessionCredentials = AwsSessionCredentials.create(
-                accessKey,
-                secretKey,
-                sessionToken
-        );
+      
         return DynamoDbClient.builder()
                 .region(region)
-                .credentialsProvider(StaticCredentialsProvider.create(sessionCredentials))
                 .build();
     }
 
