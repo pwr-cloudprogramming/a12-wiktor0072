@@ -130,6 +130,41 @@ resource "aws_security_group" "my_security_group" {
   }
 }
 
+resource "aws_dynamodb_table" "games_table" {
+  name           = "games1"
+  billing_mode   = "PAY_PER_REQUEST"
+
+  hash_key = "gameId"
+  attribute {
+    name = "gameId"
+    type = "S"  # String
+  }
+
+  attribute {
+    name = "player1"
+    type = "S"  # String
+  }
+
+  attribute {
+    name = "player1Points"
+    type = "N"  # Number
+  }
+
+  attribute {
+    name = "player2"
+    type = "S"  # String
+  }
+
+  attribute {
+    name = "player2Points"
+    type = "N"  # Number
+  }
+
+  tags = {
+    Environment = "Production"
+  }
+}
+
 resource "aws_iam_instance_profile" "emr_ec2_default_role_profile" {
   name = "EMR_EC2_DefaultRoleProfile"
   role = "EMR_EC2_DefaultRole"
