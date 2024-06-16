@@ -1,16 +1,55 @@
 terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
-    }
-  }
-  required_version = ">= 1.2.0"
+	required_providers {
+		aws = {
+			source = "hashicorp/aws"
+			version = ">= 5.0"
+		}
+	}
+	required_version = ">= 1.2.0"
 }
 
 provider "aws" {
-  region = "us-east-1"
+	region = "us-east-1"
 }
+
+resource "aws_dynamodb_table" "games" {
+  name           = "games"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "gameId"
+
+  attribute {
+    name = "gameId"
+    type = "S"
+  }
+
+  tags = {
+    Environment = "production"
+    Name        = "GamesTable"
+  }
+}
+
+resource "aws_iam_policy" "dynamodb_policy" {
+  name        = "DynamoDBTablePolicy"
+  description = "Policy to secure DynamoDB table"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::339713161833:role/LabRole" # Zastąp swoim ID konta AWS
+          ]
+        }
+        Action   = "dynamodb:*"
+        Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.games.name}"
+      }
+    ]
+  })
+}
+
+
 
 resource "aws_cognito_user_pool" "main" {
   name                     = "example-user-pool"
@@ -61,7 +100,6 @@ resource "aws_cognito_user_pool_client" "main" {
 
   prevent_user_existence_errors = "ENABLED"
 }
-
 
 # Create VPC
 resource "aws_vpc" "my_vpc" {
@@ -130,61 +168,26 @@ resource "aws_security_group" "my_security_group" {
   }
 }
 
-resource "aws_dynamodb_table" "games_table" {
-  name           = "games1"
-  billing_mode   = "PAY_PER_REQUEST"
-
-  hash_key = "gameId"
-  attribute {
-    name = "gameId"
-    type = "S"  # String
-  }
-
-  attribute {
-    name = "player1"
-    type = "S"  # String
-  }
-
-  attribute {
-    name = "player1Points"
-    type = "N"  # Number
-  }
-
-  attribute {
-    name = "player2"
-    type = "S"  # String
-  }
-
-  attribute {
-    name = "player2Points"
-    type = "N"  # Number
-  }
-
-  tags = {
-    Environment = "Production"
-  }
-}
-
-resource "aws_iam_instance_profile" "emr_ec2_default_role_profile" {
-  name = "EMR_EC2_DefaultRoleProfile"
-  role = "EMR_EC2_DefaultRole"
+resource "aws_iam_instance_profile" "lab_role_profile" {
+  name = "LabRoleProfile"
+  role = "LabRole"
 }
 
 resource "aws_instance" "my_instance" {
-  ami                         = "ami-051f8a213df8bc089"
-  instance_type               = "t2.small"
-  iam_instance_profile        = aws_iam_instance_profile.emr_ec2_default_role_profile.name
-  key_name                    = "vockey"
-  subnet_id                   = aws_subnet.my_subnet.id
-  vpc_security_group_ids      = [aws_security_group.my_security_group.id]
-  associate_public_ip_address = "true"
-  user_data                   = <<-EOF
+	ami = "ami-080e1f13689e07408"
+	instance_type = "t2.small"
+  iam_instance_profile  = aws_iam_instance_profile.lab_role_profile.name
+	key_name = "vockey"
+	subnet_id     = aws_subnet.my_subnet.id
+	vpc_security_group_ids = [aws_security_group.my_security_group.id]
+	associate_public_ip_address = "true"
+	user_data = <<-EOF
 		#!/bin/bash
 		
 		cd home/ubuntu
 		sudo apt-get update -y
 		sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-    	sudo snap install docker
+        sudo snap install docker
         
 		sudo mkdir -p /usr/local/lib/docker/cli-plugins
 		sudo curl -sL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m) -o /usr/local/lib/docker/cli-plugins/docker-compose
@@ -196,13 +199,14 @@ resource "aws_instance" "my_instance" {
 
 		sudo apt-get update -y
 		sudo apt-get install -y maven
+    sudo snap install jq
 
-		git clone -b master https://github.com/pwr-cloudprogramming/a10-wiktor0072.git
+		git clone -b main https://github.com/pwr-cloudprogramming/a12-wiktor0072.git
 
-		cd a10-wiktor0072/backend
+		cd a12-wiktor0072/backend
 		mvn package
 		cd ../..
-		echo "Changing ip in file"
+
 		# Retrieve IP address using metadata script
 		API_URL="http://169.254.169.254/latest/api"
 		TOKEN=$(curl -X PUT "$API_URL/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 600")
@@ -211,20 +215,27 @@ resource "aws_instance" "my_instance" {
 		IP_V4=$(curl -H "$TOKEN_HEADER" -s $METADATA_URL/public-ipv4)
 
 		# Replace IP address and URL in JavaScript file
-		JS_FILE="a10-wiktor0072/frontend/src/play.js"  # Update with the path to your JavaScript file
+		JS_FILE="a12-wiktor0072/frontend/src/play.js"  # Update with the path to your JavaScript file
 
 		# Replace all occurrences of "localhost" with the IP address
 		sed -i "s@localhost@$IP_V4@g" "$JS_FILE"
-		echo "IP address replaced in $JS_FILE"
+
+    JS_FILE="a12-wiktor0072/frontend/src/UploadPage.tsx"
+    sed -i "s@localhost@$IP_V4@g" "$JS_FILE"
+
+    JS_FILE="a12-wiktor0072/frontend/src/ResultPage.tsx"
+    sed -i "s@localhost@$IP_V4@g" "$JS_FILE"
+		
+
 		
 		#Replace in config.js
 		
 		REGION="${data.aws_region.current.name}"
-    	USERPOOLID="${aws_cognito_user_pool.main.id}"
-    	CLIENTID="${aws_cognito_user_pool_client.main.id}"
+    USERPOOLID="${aws_cognito_user_pool.main.id}"
+    CLIENTID="${aws_cognito_user_pool_client.main.id}"
 
 	  	# Ścieżka do pliku config.json
-		CONFIG_FILE="a10-wiktor0072/frontend/src/config.json"
+		CONFIG_FILE="a12-wiktor0072/frontend/src/config.json"
 
 
 	  	# Użyj jq do aktualizacji wartości w pliku config.json
@@ -232,10 +243,23 @@ resource "aws_instance" "my_instance" {
 		sed -i "s@\"userPoolId\": \"[^\"]*\"@\"userPoolId\": \"$USERPOOLID\"@g" "$CONFIG_FILE"
 		sed -i "s@\"clientId\": \"[^\"]*\"@\"clientId\": \"$CLIENTID\"@g" "$CONFIG_FILE"
 
-		cd a10-wiktor0072/frontend
+		cd a12-wiktor0072/frontend
 
 		sudo docker build -t frontend:v1 -t frontend:latest .
-		cd ../backend
+
+		cd ../backend/src/main/resources
+
+    credentials=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/LabRole)
+    access_key=$(echo $credentials | jq -r '.AccessKeyId')
+    secret_key=$(echo $credentials | jq -r '.SecretAccessKey')
+    session_token=$(echo $credentials | jq -r '.Token')
+    region="us-east-1" 
+
+    output_file="application.properties"
+
+    sed -i "s|amazon.aws.region=REGION|amazon.aws.region=us-east-1|g" $output_file
+    
+    cd ../../..
 
 		sudo docker build -t backend:v1 -t backend:latest .
 		cd ..
@@ -243,14 +267,13 @@ resource "aws_instance" "my_instance" {
 
 
 		EOF
+	
 
-
-  user_data_replace_on_change = true
-  tags = {
-    Name = "Tic-tac-toe-Webserver3"
-  }
+	user_data_replace_on_change = true
+	tags = {
+		Name = "Tic-tac-toe-Webserver3"
+	}
 }
-
 
 output "user_pool_id" {
   value = aws_cognito_user_pool.main.id
@@ -263,5 +286,8 @@ output "client_id" {
 data "aws_region" "current" {
 }
 
+data "aws_caller_identity" "current" {}
 
-
+variable "region" {
+  default = "us-west-1"
+}
