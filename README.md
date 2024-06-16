@@ -40,7 +40,7 @@ Screenshots of configured AWS services. Screenshots of your application running.
 ![img5](img/game.png)
 ![img6](img/avatarAfter.png)
 ![img7](img/resultsAfter.png)
-![img8](img/s3PAfter.png)
+![img8](img/s3After.png)
 ![img9](img/tableAfter.png)
 
 
