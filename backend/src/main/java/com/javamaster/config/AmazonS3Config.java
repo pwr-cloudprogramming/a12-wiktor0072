@@ -25,10 +25,9 @@ public class AmazonS3Config {
     private String sessionToken;
     @Bean
     public AmazonS3 amazonS3Client() {
-        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(accessKey, secretKey, sessionToken);
+//        BasicSessionCredentials sessionCredentials = new BasicSessionCredentials(accessKey, secretKey, sessionToken);
         return AmazonS3ClientBuilder
                 .standard()
-                .withCredentials(new AWSStaticCredentialsProvider(sessionCredentials))
                 .withRegion(Regions.US_EAST_1)
                 .build();
     }
