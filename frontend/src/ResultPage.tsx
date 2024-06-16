@@ -10,7 +10,7 @@ const ResultsPage = () => {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const response = await axios.get(url + '/game/results');
+        const response = await axios.get('http://localhost:8080/game/results');
         setResults(response.data);
       } catch (error) {
         console.error('Error fetching results:', error);
