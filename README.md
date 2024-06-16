@@ -34,13 +34,13 @@
 Screenshots of configured AWS services. Screenshots of your application running.
 
 ![img1](img/avatarPrev.png)
-![img2](img/reultsPrev.png)
-![img3](img/s3PrevPrev.png)
+![img2](img/resultsPrev.png)
+![img3](img/s3Prev.png)
 ![img4](img/tablePrev.png)
 ![img5](img/game.png)
 ![img6](img/avatarAfter.png)
-![img7](img/reultsAfter.png)
-![img8](img/s3PrevAfter.png)
+![img7](img/resultsAfter.png)
+![img8](img/s3PAfter.png)
 ![img9](img/tableAfter.png)
 
 
