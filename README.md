@@ -47,6 +47,10 @@ Screenshots of configured AWS services. Screenshots of your application running.
 
 # Reflections
 
+I've chosed dynamoDB, because:
+ - Schema-less: DynamoDB is a NoSQL database, meaning it doesn't require a fixed schema. This allows for more flexibility in handling varying data structures.
+ - Document and Key-Value Store: It supports both document and key-value store models, making it versatile for different types of applications.
+
 In this project, I learned:
 
  - Understanding of DynamoDB's NoSQL database model and its key components such as tables, items, and attributes.
